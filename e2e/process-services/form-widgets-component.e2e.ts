@@ -244,7 +244,8 @@ describe('Form widgets', () => {
             taskPage.formFields().checkFormIsDisplayed();
             expect(taskPage.taskDetails().getTitle()).toEqual('Activities');
 
-            taskPage.formFields().setValueInInputById('label', 'value 1').completeForm();
+            taskPage.formFields().setValueInInputById('label', 'value 1');
+            taskPage.formFields().completeForm();
             /* cspell:disable-next-line */
             taskPage.filtersPage().goToFilter(CONSTANTS.TASK_FILTERS.COMPLETED_TASKS);
 

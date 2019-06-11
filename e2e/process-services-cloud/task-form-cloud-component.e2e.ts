@@ -52,8 +52,9 @@ describe('Task form cloud component', () => {
     let processInstancesService: ProcessInstancesService;
     let queryService: QueryService;
 
-    let completedTask, createdTask, assigneeTask, toBeCompletedTask, completedProcess, claimedTask, formValidationsTask;
+    let completedTask, createdTask, assigneeTask, toBeCompletedTask, completedProcess, claimedTask, formValidationsTask, formTaskId;
     const candidateBaseApp = resources.ACTIVITI7_APPS.CANDIDATE_BASE_APP.name;
+    const simpleApp = resources.ACTIVITI7_APPS.SIMPLE_APP.name;
     const completedTaskName = StringUtil.generateRandomString(), assignedTaskName = StringUtil.generateRandomString();
 
     beforeAll(async (done) => {
@@ -78,7 +79,7 @@ describe('Task form cloud component', () => {
         await tasksService.createAndCompleteTask(completedTaskName, candidateBaseApp);
 
         processDefinitionService = new ProcessDefinitionsService(apiService);
-        const processDefinition = await processDefinitionService
+        let processDefinition = await processDefinitionService
             .getProcessDefinitionByName(resources.ACTIVITI7_APPS.CANDIDATE_BASE_APP.processes.candidateUserProcess, candidateBaseApp);
 
         processInstancesService = new ProcessInstancesService(apiService);
@@ -88,6 +89,11 @@ describe('Task form cloud component', () => {
         const task = await queryService.getProcessInstanceTasks(completedProcess.entry.id, candidateBaseApp);
         claimedTask = await tasksService.claimTask(task.list.entries[0].entry.id, candidateBaseApp);
 
+        processDefinition = await processDefinitionService.getProcessDefinitionByName('dropdownrestprocess', simpleApp);
+        const formProcess = await processInstancesService.createProcessInstance(processDefinition.entry.key, simpleApp);
+        const formTasks = await queryService.getProcessInstanceTasks(formProcess.entry.id, simpleApp);
+        formTaskId = formTasks.list.entries[0].entry.id;
+
         await settingsPage.setProviderBpmSso(
             browser.params.config.bpmHost,
             browser.params.config.oauth2.host,
@@ -96,23 +102,58 @@ describe('Task form cloud component', () => {
         done();
     }, 5 * 60 * 1000);
 
-    it('[C307032] Should display the appropriate title for the unclaim option of a Task', async () => {
+    beforeEach(() => {
         navigationBarPage.navigateToProcessServicesCloudPage();
         appListCloudComponent.checkApsContainer();
+    });
+
+    it('[C307032] Should display the appropriate title for the unclaim option of a Task', async () => {
         appListCloudComponent.goToApp(candidateBaseApp);
         tasksCloudDemoPage.myTasksFilter().clickTaskFilter();
         tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(assigneeTask.entry.name);
-        tasksCloudDemoPage.taskListCloudComponent().selectRow(assigneeTask.entry.name);
+        tasksCloudDemoPage.taskListCloudComponent().selectRowByName(assigneeTask.entry.name);
         expect(taskFormCloudComponent.getReleaseButtonText()).toBe('RELEASE');
     });
 
+    it('[C310366] Should refresh buttons and form after an action is complete', () => {
+        appListCloudComponent.goToApp(simpleApp);
+        tasksCloudDemoPage.myTasksFilter().clickTaskFilter();
+        expect(tasksCloudDemoPage.getActiveFilterName()).toBe('My Tasks');
+        tasksCloudDemoPage.editTaskFilterCloudComponent().clickCustomiseFilterHeader().clearAssignee().setStatusFilterDropDown('CREATED');
+
+        tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedById(formTaskId);
+        tasksCloudDemoPage.taskListCloudComponent().selectRowByTaskId(formTaskId);
+
+        taskFormCloudComponent.checkFormIsReadOnly();
+        taskFormCloudComponent.checkClaimButtonIsDisplayed();
+        taskFormCloudComponent.checkCompleteButtonIsNotDisplayed();
+        taskFormCloudComponent.checkReleaseButtonIsNotDisplayed();
+
+        taskFormCloudComponent.clickClaimButton();
+        taskFormCloudComponent.checkFormIsDisplayed();
+
+        taskFormCloudComponent.checkFormIsNotReadOnly();
+        taskFormCloudComponent.checkClaimButtonIsNotDisplayed();
+        taskFormCloudComponent.checkCompleteButtonIsDisplayed();
+        taskFormCloudComponent.checkReleaseButtonIsDisplayed();
+
+        taskFormCloudComponent.clickCompleteButton();
+        tasksCloudDemoPage.completedTasksFilter().clickTaskFilter();
+        tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedById(formTaskId);
+        tasksCloudDemoPage.taskListCloudComponent().selectRowByTaskId(formTaskId);
+
+        taskFormCloudComponent.checkFormIsReadOnly();
+        taskFormCloudComponent.checkClaimButtonIsNotDisplayed();
+        taskFormCloudComponent.checkCompleteButtonIsNotDisplayed();
+        taskFormCloudComponent.checkReleaseButtonIsNotDisplayed();
+        taskFormCloudComponent.checkCancelButtonIsDisplayed();
+    });
+
     it('[C310142] Empty content is displayed when having a task without form', async () => {
-        navigationBarPage.navigateToProcessServicesCloudPage();
-        appListCloudComponent.checkApsContainer();
         appListCloudComponent.goToApp(candidateBaseApp);
         tasksCloudDemoPage.myTasksFilter().clickTaskFilter();
         tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(assigneeTask.entry.name);
-        tasksCloudDemoPage.taskListCloudComponent().selectRow(assigneeTask.entry.name);
+        tasksCloudDemoPage.taskListCloudComponent().selectRowByName(assigneeTask.entry.name);
         taskFormCloudComponent.checkFormIsNotDisplayed();
         expect(taskFormCloudComponent.getFormTitle()).toBe(assigneeTask.entry.name);
         taskFormCloudComponent.checkFormContentIsEmpty();
@@ -121,12 +162,10 @@ describe('Task form cloud component', () => {
     });
 
     it('[C310199] Should not be able to complete a task when required field is empty or invalid data is added to a field', async () => {
-        navigationBarPage.navigateToProcessServicesCloudPage();
-        appListCloudComponent.checkApsContainer();
         appListCloudComponent.goToApp(candidateBaseApp);
         tasksCloudDemoPage.myTasksFilter().clickTaskFilter();
         tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(formValidationsTask.entry.name);
-        tasksCloudDemoPage.taskListCloudComponent().selectRow(formValidationsTask.entry.name);
+        tasksCloudDemoPage.taskListCloudComponent().selectRowByName(formValidationsTask.entry.name);
         taskFormCloudComponent.checkFormIsDisplayed();
         taskFormCloudComponent.formFields().checkFormIsDisplayed();
         taskFormCloudComponent.formFields().checkWidgetIsVisible('Text0tma8h');
@@ -134,37 +173,33 @@ describe('Task form cloud component', () => {
         taskFormCloudComponent.formFields().checkWidgetIsVisible('Number0klykr');
         taskFormCloudComponent.formFields().checkWidgetIsVisible('Amount0mtp1h');
 
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(false);
+        expect(taskFormCloudComponent.isCompleteButtonDisabled()).toBe(true, 'Complete Button should be disabled');
         widget.textWidget().setValue('Text0tma8h', 'Some random text');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(true);
+        expect(taskFormCloudComponent.isCompleteButtonEnabled()).toBe(true, 'Complete Button should be enabled');
 
         widget.dateWidget().setDateInput('Date0m1moq', 'invalid date');
-        widget.dateWidget().clickOutsideWidget('Date0m1moq');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(false);
+        expect(taskFormCloudComponent.isCompleteButtonDisabled()).toBe(true, 'Complete Button should be disabled');
 
         widget.dateWidget().setDateInput('Date0m1moq', '20-10-2018');
-        widget.dateWidget().clickOutsideWidget('Date0m1moq');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(true);
+        expect(taskFormCloudComponent.isCompleteButtonEnabled()).toBe(true, 'Complete Button should be enabled');
 
         widget.numberWidget().setFieldValue('Number0klykr', 'invalid number');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(false);
+        expect(taskFormCloudComponent.isCompleteButtonDisabled()).toBe(true, 'Complete Button should be disabled');
 
         widget.numberWidget().setFieldValue('Number0klykr', '26');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(true);
+        expect(taskFormCloudComponent.isCompleteButtonEnabled()).toBe(true, 'Complete Button should be enabled');
 
         widget.amountWidget().setFieldValue('Amount0mtp1h', 'invalid amount');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(false);
+        expect(taskFormCloudComponent.isCompleteButtonDisabled()).toBe(true, 'Complete Button should be disabled');
 
         widget.amountWidget().setFieldValue('Amount0mtp1h', '660');
-        expect(taskFormCloudComponent.getCompleteButton().isEnabled()).toBe(true);
+        expect(taskFormCloudComponent.isCompleteButtonEnabled()).toBe(true, 'Complete Button should be enabled');
 
     });
 
     describe('Complete task - cloud directive', () => {
 
         beforeEach((done) => {
-            navigationBarPage.navigateToProcessServicesCloudPage();
-            appListCloudComponent.checkApsContainer();
             appListCloudComponent.goToApp(candidateBaseApp);
             done();
         });
@@ -173,7 +208,7 @@ describe('Task form cloud component', () => {
             tasksCloudDemoPage.completedTasksFilter().clickTaskFilter();
             expect(tasksCloudDemoPage.getActiveFilterName()).toBe('Completed Tasks');
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(completedTaskName);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(completedTaskName);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(completedTaskName);
             taskHeaderCloudPage.checkTaskPropertyListIsDisplayed();
             taskFormCloudComponent.checkCompleteButtonIsNotDisplayed();
         });
@@ -184,7 +219,7 @@ describe('Task form cloud component', () => {
             tasksCloudDemoPage.editTaskFilterCloudComponent().clickCustomiseFilterHeader().clearAssignee().setStatusFilterDropDown('CREATED');
 
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(createdTask.entry.name);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(createdTask.entry.name);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(createdTask.entry.name);
             taskHeaderCloudPage.checkTaskPropertyListIsDisplayed();
             taskFormCloudComponent.checkCompleteButtonIsNotDisplayed();
         });
@@ -194,7 +229,7 @@ describe('Task form cloud component', () => {
             expect(tasksCloudDemoPage.getActiveFilterName()).toBe('My Tasks');
 
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(assigneeTask.entry.name);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(assigneeTask.entry.name);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(assigneeTask.entry.name);
             taskHeaderCloudPage.checkTaskPropertyListIsDisplayed();
             taskFormCloudComponent.clickCancelButton();
 
@@ -207,7 +242,7 @@ describe('Task form cloud component', () => {
             expect(tasksCloudDemoPage.getActiveFilterName()).toBe('My Tasks');
 
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(toBeCompletedTask.entry.name);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(toBeCompletedTask.entry.name);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(toBeCompletedTask.entry.name);
             taskHeaderCloudPage.checkTaskPropertyListIsDisplayed();
             taskFormCloudComponent.checkCompleteButtonIsDisplayed().clickCompleteButton();
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsNotDisplayedByName(toBeCompletedTask.entry.name);
@@ -222,7 +257,7 @@ describe('Task form cloud component', () => {
             expect(tasksCloudDemoPage.getActiveFilterName()).toBe('My Tasks');
 
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(claimedTask.entry.name);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(claimedTask.entry.name);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(claimedTask.entry.name);
             taskHeaderCloudPage.checkTaskPropertyListIsDisplayed();
             taskFormCloudComponent.checkCompleteButtonIsDisplayed().clickCompleteButton();
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsNotDisplayedByName(claimedTask.entry.name);

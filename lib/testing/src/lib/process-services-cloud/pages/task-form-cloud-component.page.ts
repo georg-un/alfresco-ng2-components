@@ -32,6 +32,44 @@ export class TaskFormCloudComponent {
     emptyContentIcon = element(by.css(`div.adf-empty-content mat-icon.adf-empty-content__icon`));
     emptyContentTitle = element(by.css(`div.adf-empty-content div.adf-empty-content__title`));
     emptyContentSubtitle = element(by.css(`div.adf-empty-content div.adf-empty-content__subtitle`));
+    readOnlyForm = element(by.css('div[class="adf-readonly-form"]'));
+    spinner = element(by.css('adf-cloud-task-form mat-spinner'));
+
+    checkCancelButtonIsDisplayed() {
+        BrowserVisibility.waitUntilElementIsVisible(this.cancelButton);
+    }
+
+    checkFormIsReadOnly() {
+        BrowserVisibility.waitUntilElementIsVisible(this.readOnlyForm);
+    }
+
+    checkFormIsNotReadOnly() {
+        BrowserVisibility.waitUntilElementIsNotVisible(this.readOnlyForm);
+    }
+
+    checkReleaseButtonIsDisplayed() {
+        BrowserVisibility.waitUntilElementIsVisible(this.releaseButton);
+    }
+
+    checkReleaseButtonIsNotDisplayed() {
+        BrowserVisibility.waitUntilElementIsNotVisible(this.releaseButton);
+    }
+
+    checkClaimButtonIsDisplayed() {
+        BrowserVisibility.waitUntilElementIsVisible(this.claimButton);
+    }
+
+    checkClaimButtonIsNotDisplayed() {
+        BrowserVisibility.waitUntilElementIsNotVisible(this.claimButton);
+    }
+
+    isCompleteButtonEnabled() {
+        return BrowserVisibility.waitUntilElementIsNotVisible(element(by.css('button[id="adf-form-complete"][disabled]')));
+    }
+
+    isCompleteButtonDisabled() {
+        return BrowserVisibility.waitUntilElementIsVisible(element(by.css('button[id="adf-form-complete"][disabled]')));
+    }
 
     checkCompleteButtonIsDisplayed() {
         BrowserVisibility.waitUntilElementIsVisible(this.completeButton);

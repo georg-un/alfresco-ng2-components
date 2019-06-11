@@ -199,7 +199,7 @@ describe('Start Task Form', () => {
             startTask.selectFormDefinition('StartEventForm');
             startTask.clickStartButton();
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(standaloneTaskName);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(standaloneTaskName);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(standaloneTaskName);
             taskFormCloudComponent.formFields().checkFormIsDisplayed();
             taskFormCloudComponent.formFields().checkWidgetIsVisible('FirstName');
             taskFormCloudComponent.formFields().checkWidgetIsVisible('Number07vyx9');
@@ -217,7 +217,7 @@ describe('Start Task Form', () => {
 
             expect(tasksCloudDemoPage.getActiveFilterName()).toBe('My Tasks');
             tasksCloudDemoPage.taskListCloudComponent().checkContentIsDisplayedByName(standaloneTaskName);
-            tasksCloudDemoPage.taskListCloudComponent().selectRow(standaloneTaskName);
+            tasksCloudDemoPage.taskListCloudComponent().selectRowByName(standaloneTaskName);
             taskFormCloudComponent.formFields().checkFormIsDisplayed();
             expect(widget.textWidget().getFieldValue('FirstName')).toBe('sample');
             expect(widget.numberWidget().getFieldValue('Number07vyx9')).toBe('26');

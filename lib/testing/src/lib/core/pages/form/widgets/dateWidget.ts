@@ -53,7 +53,7 @@ export class DateWidget {
 
     clickOutsideWidget(fieldId) {
         const form = this.formFields.getWidget(fieldId);
-        BrowserActions.click(form);
+        return BrowserActions.click(form);
     }
 
     getErrorMessage(fieldId) {

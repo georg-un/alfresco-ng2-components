@@ -194,9 +194,9 @@ describe('Start Task - Custom App', () => {
             .tasksListPage()
             .checkContentIsDisplayed(tasks[4]);
 
-        expect(taskPage.formFields()
-            .setFieldValue(by.id, formTextField, formFieldValue)
-            .getFieldValue(formTextField)).toEqual(formFieldValue);
+        taskPage.formFields().setFieldValue(by.id, formTextField, formFieldValue);
+
+        expect(taskPage.formFields().getFieldValue(formTextField)).toEqual(formFieldValue);
 
         taskPage
             .formFields()
@@ -209,7 +209,9 @@ describe('Start Task - Custom App', () => {
 
         taskPage
             .formFields()
-            .setFieldValue(by.id, formTextField, formFieldValue)
+            .setFieldValue(by.id, formTextField, formFieldValue);
+        taskPage
+            .formFields()
             .checkFieldValue(by.id, formTextField, formFieldValue);
 
         taskPage

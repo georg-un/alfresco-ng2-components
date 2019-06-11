@@ -20,6 +20,17 @@ import { browser, by, element, ElementFinder, protractor } from 'protractor';
 
 export class BrowserActions {
 
+    static async clearSendKeysAndPressEnter(elementFinder: ElementFinder, text: string) {
+        BrowserVisibility.waitUntilElementIsVisible(elementFinder);
+        BrowserVisibility.waitUntilElementIsClickable(elementFinder);
+        elementFinder.click();
+        elementFinder.sendKeys('');
+        elementFinder.clear();
+
+        elementFinder.sendKeys(text);
+        return elementFinder.sendKeys(protractor.Key.ENTER);
+    }
+
     static async click(elementFinder: ElementFinder) {
         BrowserVisibility.waitUntilElementIsVisible(elementFinder);
         BrowserVisibility.waitUntilElementIsClickable(elementFinder);

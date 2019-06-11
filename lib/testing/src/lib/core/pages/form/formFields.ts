@@ -36,8 +36,7 @@ export class FormFields {
 
     setFieldValue(locator, field, value) {
         const fieldElement = element(locator(field));
-        BrowserActions.clearSendKeys(fieldElement, value);
-        return this;
+        return BrowserActions.clearSendKeys(fieldElement, value);
     }
 
     checkWidgetIsVisible(fieldId) {
@@ -152,8 +151,7 @@ export class FormFields {
 
     setValueInInputById(fieldId, value) {
         const input = element(by.id(fieldId));
-        BrowserActions.clearSendKeys(input, value);
-        return this;
+        return BrowserActions.clearSendKeysAndPressEnter(input, value);
     }
 
     isCompleteFormButtonDisabled() {

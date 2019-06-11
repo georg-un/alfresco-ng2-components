@@ -126,12 +126,12 @@ describe('Start Task - Task App', () => {
         taskPage.createNewTask()
             .addForm(app.formName).addName(tasks[4]).clickStartButton();
         taskPage.tasksListPage().checkContentIsDisplayed(tasks[4]);
-        expect(taskPage.formFields().setFieldValue(by.id, formTextField, formFieldValue)
-            .getFieldValue(formTextField)).toEqual(formFieldValue);
+        taskPage.formFields().setFieldValue(by.id, formTextField, formFieldValue);
+        expect(taskPage.formFields().getFieldValue(formTextField)).toEqual(formFieldValue);
         taskPage.formFields().refreshForm().checkFieldValue(by.id, formTextField, '');
         taskPage.tasksListPage().checkContentIsDisplayed(tasks[4]);
-        taskPage.formFields().setFieldValue(by.id, formTextField, formFieldValue)
-            .checkFieldValue(by.id, formTextField, formFieldValue);
+        taskPage.formFields().setFieldValue(by.id, formTextField, formFieldValue);
+        taskPage.formFields().checkFieldValue(by.id, formTextField, formFieldValue);
         taskPage.formFields().saveForm().checkFieldValue(by.id, formTextField, formFieldValue);
     });
 
